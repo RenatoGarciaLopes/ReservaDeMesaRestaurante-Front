@@ -1,22 +1,28 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Container, Button, Box, CircularProgress, Typography } from '@mui/material';
+import { Container, Button, Box, CircularProgress, Typography, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import TableHeader from '../shared/components/TableHeader.tsx';
 import TableCard from '../shared/components/TableCard.tsx';
-// NOVO: Importa Table, TableStatusType e TableFilterStatus
 import type { Table, TableStatusType, TableFilterStatus, SortOption } from '../shared/types/Table';
 import AddIcon from '@mui/icons-material/Add';
 import TableService from '../shared/services/TableService';
+import SettingsModal from '../shared/components/SettingsModal.tsx';
+
+
 
 function TablesPage() {
   const [tables, setTables] = useState<Table[]>([]);
-  // NOVO: O filtro agora é do tipo TableFilterStatus
   const [filter, setFilter] = useState<TableFilterStatus>('Todos');
   const [sort, setSort] = useState<SortOption>('number');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [openSettingsModal, setOpenSettingsModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+
+
+  const [openAddTableModal, setOpenAddTableModal] = useState(false);
+  const [newTableNumber, setNewTableNumber] = useState<number | ''>('');
+  const [newTableCapacity, setNewTableCapacity] = useState<number | ''>(4); // Default capacity to 4
 
   const fetchTables = useCallback(async () => {
     try {
@@ -24,7 +30,7 @@ function TablesPage() {
       const { content } = await TableService.getMesasPaginated(
         currentPage,
         pageSize,
-        filter, // Passa o filtro diretamente (do tipo TableFilterStatus)
+        filter,
         undefined,
         true
       );
@@ -42,7 +48,7 @@ function TablesPage() {
     fetchTables();
   }, [fetchTables]);
 
-  const handleFilterChange = (newFilter: TableFilterStatus) => { // Aceita TableFilterStatus
+  const handleFilterChange = (newFilter: TableFilterStatus) => {
     setFilter(newFilter);
     setCurrentPage(0);
   };
@@ -53,7 +59,6 @@ function TablesPage() {
 
   const handleConfirmArrival = async (tableId: number) => {
     try {
-      // NOVO: O status que enviamos para o backend é TableStatusType
       await TableService.updateMesaStatus(tableId, 'Ocupada');
       fetchTables();
       alert("Chegada confirmada com sucesso!");
@@ -63,11 +68,28 @@ function TablesPage() {
     }
   };
 
-  const handleAddTable = async () => {
+  // Functions for the new table modal
+  const handleOpenAddTableModal = () => {
+    setNewTableNumber(''); // Reset number when opening
+    setNewTableCapacity(4); // Reset capacity to default
+    setOpenAddTableModal(true);
+  };
+
+  const handleCloseAddTableModal = () => {
+    setOpenAddTableModal(false);
+  };
+
+  const handleCreateNewTable = async () => {
+    if (newTableNumber === '' || newTableCapacity === '') {
+      alert("Por favor, preencha o número e a capacidade da mesa.");
+      return;
+    }
+
     try {
-      const createdTable = await TableService.createMesa(0, 4);
+      const createdTable = await TableService.createMesa(Number(newTableNumber), Number(newTableCapacity));
       fetchTables();
       alert(`Mesa ${createdTable.number} adicionada com sucesso!`);
+      handleCloseAddTableModal(); // Close modal on success
     } catch (error) {
       console.error("Erro ao adicionar mesa:", error);
       alert("Erro ao adicionar mesa. Por favor, tente novamente.");
@@ -79,7 +101,6 @@ function TablesPage() {
       if (sort === 'number') {
         return a.number - b.number;
       } else if (sort === 'status') {
-        // NOVO: A ordenação usa TableStatusType para comparar
         const statusOrder: Record<TableStatusType, number> = { 'Livre': 1, 'Reservada': 2, 'Ocupada': 3 };
         return statusOrder[a.status] - statusOrder[b.status];
       }
@@ -107,13 +128,14 @@ function TablesPage() {
     );
   }
 
- return (
+  return (
     <Container maxWidth={false} disableGutters sx={{ padding: 0 }}>
       <TableHeader
         currentFilter={filter}
         onFilterChange={handleFilterChange}
         currentSort={sort}
         onSortChange={handleSortChange}
+        onSettingsClick={() => setOpenSettingsModal(true)}
       />
       <Box sx={{ padding: 2 }}>
         <Box
@@ -122,16 +144,15 @@ function TablesPage() {
             flexWrap: 'wrap',
             gap: '16px',
             justifyContent: 'flex-start',
-            paddingLeft:'130px'
-
+            paddingLeft: '130px'
           }}
         >
           {filteredAndSortedTables.map((table) => (
-            <TableCard key={table.id} table={table} onConfirmArrival={handleConfirmArrival} />
+            <TableCard key={table.id} table={table} onConfirmArrival={handleConfirmArrival} onTableUpdate={fetchTables} />
           ))}
           <Button
             variant="outlined"
-            onClick={handleAddTable}
+            onClick={handleOpenAddTableModal} // Open modal on click
             sx={{
               width: 295,
               height: 150,
@@ -152,6 +173,55 @@ function TablesPage() {
           </Button>
         </Box>
       </Box>
+
+
+      <Dialog open={openAddTableModal} onClose={handleCloseAddTableModal}>
+        <DialogTitle>Adicionar Nova Mesa</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Número da Mesa"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={newTableNumber}
+            onChange={(e) => setNewTableNumber(e.target.value === '' ? '' : Number(e.target.value))}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Capacidade"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={newTableCapacity}
+            onChange={(e) => setNewTableCapacity(e.target.value === '' ? '' : Number(e.target.value))}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddTableModal} sx={{
+            color: 'secondary.contrastText',
+            '&:hover': {
+              color: 'primary.light',
+            },
+          }}>
+            Cancelar
+          </Button>
+          <Button onClick={handleCreateNewTable} variant="contained" sx={{
+            backgroundColor: 'primary.dark', color: 'primary.contrastText',
+            '&:hover': {
+              backgroundColor: 'primary.light'
+            }
+          }}>
+            Adicionar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <SettingsModal
+        open={openSettingsModal}
+        onClose={() => setOpenSettingsModal(false)}
+      />
     </Container>
   );
 }

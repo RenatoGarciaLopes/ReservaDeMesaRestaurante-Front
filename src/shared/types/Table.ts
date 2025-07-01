@@ -5,7 +5,7 @@ export interface Table {
   id: number;
   number: number;
   capacity: number;
-  status: TableStatusType; // A mesa só pode ter um status real
+  status: TableStatusType; 
   totalOrder?: number;
   active: boolean;
 }

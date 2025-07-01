@@ -1,17 +1,19 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
-import type { SortOption, TableStatus } from '../types/Table';
-
+import { AppBar, Toolbar, Typography, Select, MenuItem, FormControl, InputLabel, Box, IconButton } from '@mui/material'; // Adicione IconButton
+import SettingsIcon from '@mui/icons-material/Settings'; // Adicione esta importação
+import type { SortOption, TableFilterStatus } from '../types/Table'; // Remova TableStatusType se não for mais usado aqui
 
 
 interface TableHeaderProps {
-  currentFilter: TableStatus;
-  onFilterChange: (filter: TableStatus) => void;
+  currentFilter: TableFilterStatus;
+  // AQUI: Corrigido o tipo para TableFilterStatus, pois inclui 'Todos'
+  onFilterChange: (filter: TableFilterStatus) => void;
   currentSort: SortOption;
   onSortChange: (sort: SortOption) => void;
+  onSettingsClick: () => void; // NOVO: Prop para o clique no botão de configurações
 }
 
-const TableHeader: React.FC<TableHeaderProps> = ({ currentFilter, onFilterChange, currentSort, onSortChange }) => {
+const TableHeader: React.FC<TableHeaderProps> = ({ currentFilter, onFilterChange, currentSort, onSortChange, onSettingsClick }) => { // Adicione onSettingsClick aqui
   return (
     <AppBar position="static" sx={{ backgroundColor: '#f5f5f5', color: '#333', boxShadow: 'none', borderBottom: '1px solid #ddd' }}>
       <Toolbar>
@@ -26,7 +28,8 @@ const TableHeader: React.FC<TableHeaderProps> = ({ currentFilter, onFilterChange
               id="filter-select"
               value={currentFilter}
               label="Mostrar"
-              onChange={(e) => onFilterChange(e.target.value as TableStatus)}
+              // AQUI: O valor já é TableFilterStatus pelo select, não precisa de cast extra
+              onChange={(e) => onFilterChange(e.target.value as TableFilterStatus)}
               sx={{ '.MuiSelect-select': { paddingRight: '32px !important' } }}
             >
               <MenuItem value="Todos">Todos</MenuItem>
@@ -52,6 +55,21 @@ const TableHeader: React.FC<TableHeaderProps> = ({ currentFilter, onFilterChange
             </Select>
           </FormControl>
         </Box>
+        {/* NOVO: Botão de Configurações */}
+        <IconButton
+          color="inherit" // Cor do ícone
+          aria-label="settings"
+          onClick={onSettingsClick} // Usa a nova prop de clique
+          sx={{
+            marginLeft: 2, // Margem à esquerda para separar dos selects
+            color: 'text.secondary', // Cor padrão do ícone
+            '&:hover': {
+              color: 'primary.main', // Cor ao passar o mouse
+            },
+          }}
+        >
+          <SettingsIcon />
+        </IconButton>
       </Toolbar>
     </AppBar>
   );

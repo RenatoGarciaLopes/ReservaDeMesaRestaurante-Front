@@ -1,11 +1,15 @@
-import TablesPage from './pages/TablesPage.tsx'; // Importa a nova página
-import './App.css'; // Mantém o CSS global da aplicação
+
+import { BrowserRouter as Router } from 'react-router-dom'; // Importe o Router aqui
+import { AuthProvider } from '../src/shared/context/AuthContext';
+import AppRoutes from '../src/routes/AppRoutes';
 
 function App() {
   return (
-    <>
-      <TablesPage />
-    </>
+    <Router> {/* O Router agora envolve tudo */}
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </Router>
   );
 }
 
