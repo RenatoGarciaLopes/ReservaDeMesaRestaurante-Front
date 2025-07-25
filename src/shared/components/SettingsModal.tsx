@@ -95,8 +95,7 @@ function SettingsModal({ open, onClose }: SettingsModalProps) {
 
       // Re-fetch os dados do funcionário para atualizar o contexto
       // Ou re-autenticar o usuário para ter os dados mais recentes
-      await login(employee.cpf); // Usa a função login do contexto para atualizar o employee
-
+      
       setSuccessMessage("Dados atualizados com sucesso!");
     } catch (error: any) {
       console.error("Erro ao atualizar dados do funcionário:", error);
@@ -157,17 +156,6 @@ function SettingsModal({ open, onClose }: SettingsModalProps) {
                 </ListItemButton>
               </ListItem>
               {/* Adicione mais itens aqui para outras seções futuras */}
-            </List>
-            <Divider />
-            <List>
-              <ListItem disablePadding>
-                <ListItemButton onClick={handleLogout}>
-                  <ListItemIcon>
-                    <ExitToAppIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Sair do Sistema" />
-                </ListItemButton>
-              </ListItem>
             </List>
           </Box>
 

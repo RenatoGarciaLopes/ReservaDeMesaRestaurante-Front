@@ -1,4 +1,4 @@
-export type StatusReserva = 'CONFIRMADA' | 'CANCELADA' | 'CONCLUIDA'; // Adapte conforme seu enum
+export type StatusReserva = 'ATIVA' | 'CANCELADA' | 'CONCLUIDA'; // Adapte conforme seu enum
 
 export interface CadastrarReservaDto {
   clienteId: number;

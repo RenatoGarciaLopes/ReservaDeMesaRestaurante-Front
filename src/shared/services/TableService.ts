@@ -1,6 +1,7 @@
 import axios from 'axios';
 // Importa Table, TableStatusType e TableFilterStatus
 import type { Table, TableStatusType, TableFilterStatus } from '../types/Table';
+import type { ListarReservaDto } from '../types/Reservation';
 
 interface ListarMesaDto {
   id: number;
@@ -8,6 +9,7 @@ interface ListarMesaDto {
   capacidade: number;
   status: 'LIVRE' | 'OCUPADO' | 'RESERVADA';
   ativo: boolean;
+  reservas?: ListarReservaDto[]; // Lista de reservas associadas à mesa
 }
 
 interface ApiResponse<T> {
@@ -85,6 +87,7 @@ class TableService {
       capacity: mesaDto.capacidade,
       status: this.mapBackendStatusToFrontend(mesaDto.status), // <-- AQUI: Agora retorna TableStatusType
       active: mesaDto.ativo,
+      reservas: mesaDto.reservas, // Inclui as reservas se existirem
     }));
 
     return {
@@ -107,6 +110,7 @@ class TableService {
       capacity: createdMesaDto.capacidade,
       status: this.mapBackendStatusToFrontend(createdMesaDto.status),
       active: createdMesaDto.ativo,
+      reservas: createdMesaDto.reservas,
     };
   }
 
@@ -124,6 +128,24 @@ class TableService {
       capacity: updatedMesaDto.capacidade,
       status: this.mapBackendStatusToFrontend(updatedMesaDto.status),
       active: updatedMesaDto.ativo,
+      reservas: updatedMesaDto.reservas,
+    };
+  }
+
+  async updateMesaInfo(id: number, numero: number, capacidade: number): Promise<Table> {
+    const dataToSend = { numero, capacidade };
+    const response = await axios.put<ApiResponse<ListarMesaDto>>(`${API_URL}/${id}`, dataToSend);
+    if (response.data.error) {
+      throw new Error(response.data.error.message || "Erro desconhecido ao atualizar mesa.");
+    }
+    const updatedMesaDto = response.data.data;
+    return {
+      id: updatedMesaDto.id,
+      number: updatedMesaDto.numero,
+      capacity: updatedMesaDto.capacidade,
+      status: this.mapBackendStatusToFrontend(updatedMesaDto.status),
+      active: updatedMesaDto.ativo,
+      reservas: updatedMesaDto.reservas,
     };
   }
 

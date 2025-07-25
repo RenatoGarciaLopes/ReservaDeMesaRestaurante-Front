@@ -2,7 +2,8 @@ import React, { useState } from 'react'; // Adicione useState
 import { Card, CardContent, Typography, Button, Box } from '@mui/material';
 import { styled } from '@mui/system'; // Mantenha se estiver usando styled components
 import type { Table, TableStatusType } from '../types/Table';
-import TableLivreActionsModal from './TableLivreActionsModal'; // Adicione esta importação
+import TableLivreActionsModal from './TableLivreActionsModal'; // Modal para mesas livres
+import TableOcupadaActionsModal from './TableOcupadaActionsModal'; // Modal para mesas ocupadas
 
 interface TableCardProps {
   table: Table;
@@ -38,13 +39,24 @@ const StyledCard = styled(Card)<{ status: TableStatusType }>(({ theme, status })
 const TableCard: React.FC<TableCardProps> = ({ table, onConfirmArrival, onTableUpdate }) => {
   // NOVO ESTADO: para controlar a abertura do modal de ações da mesa
   const [openTableLivreActionsModal, setOpenTableLivreActionsModal] = useState(false);
+  const [openTableOcupadaActionsModal, setOpenTableOcupadaActionsModal] = useState(false);
 
-  const handleOpenTableLivreActionsModal = () => {
-    setOpenTableLivreActionsModal(true);
+  const handleOpenModal = () => {
+    if (table.status === 'Livre') {
+      setOpenTableLivreActionsModal(true);
+    } else if (table.status === 'Ocupada') {
+      setOpenTableOcupadaActionsModal(true);
+    }
+    // Mesas reservadas não abrem modal ao clicar
   };
 
   const handleCloseTableLivreActionsModal = () => {
     setOpenTableLivreActionsModal(false);
+    onTableUpdate(); // Chama a atualização das mesas ao fechar o modal
+  };
+
+  const handleCloseTableOcupadaActionsModal = () => {
+    setOpenTableOcupadaActionsModal(false);
     onTableUpdate(); // Chama a atualização das mesas ao fechar o modal
   };
 
@@ -71,9 +83,9 @@ const TableCard: React.FC<TableCardProps> = ({ table, onConfirmArrival, onTableU
           overflow: 'hidden',
           flexShrink: 0,
           position: 'relative',
-          cursor: 'pointer', // Adicionado para indicar clicável
+          cursor: table.status === 'Reservada' ? 'default' : 'pointer', // Só clicável se não for reservada
         }}
-        onClick={handleOpenTableLivreActionsModal} // NOVO: O clique no card abre o modal
+        onClick={handleOpenModal} // NOVO: O clique no card abre o modal correto
       >
         <CardContent sx={{ padding: '16px', paddingBottom: '0px' }}>
           <Typography variant="body2" sx={{ fontSize: 14, color: currentTextColor, marginBottom: '2px', fontWeight: 'bold' }}>
@@ -157,12 +169,20 @@ const TableCard: React.FC<TableCardProps> = ({ table, onConfirmArrival, onTableU
         </Box>
       </Card>
 
-      {/* NOVO: Renderiza o TableLivreActionsModal */}
+      {/* Modal para mesas livres */}
       <TableLivreActionsModal
         open={openTableLivreActionsModal}
         onClose={handleCloseTableLivreActionsModal}
-        table={table} // Passa o objeto da mesa para o modal
-        onTableUpdate={onTableUpdate} // Passa a função de atualização para o modal
+        table={table}
+        onTableUpdate={onTableUpdate}
+      />
+
+      {/* Modal para mesas ocupadas */}
+      <TableOcupadaActionsModal
+        open={openTableOcupadaActionsModal}
+        onClose={handleCloseTableOcupadaActionsModal}
+        table={table}
+        onTableUpdate={onTableUpdate}
       />
     </>
   );

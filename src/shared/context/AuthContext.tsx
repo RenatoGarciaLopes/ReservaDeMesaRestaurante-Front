@@ -1,14 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 // Importe ListarFuncionarioDto diretamente
-import type { ListarFuncionarioDto } from '../types/Employee';
-import EmployeeService from '../services/EmployeeService';
+
+import AuthService from '../services/AuthService';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
-  // Use ListarFuncionarioDto aqui
-  employee: ListarFuncionarioDto | null;
+  employee: any | null; // Pode ser null ou apenas email
   isAuthenticated: boolean;
-  login: (cpf: string) => Promise<boolean>;
+  login: (email: string, senha: string) => Promise<boolean>;
   logout: () => void;
   loadingAuth: boolean;
 }
@@ -20,46 +19,40 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  // Use ListarFuncionarioDto aqui
-  const [employee, setEmployee] = useState<ListarFuncionarioDto | null>(null);
+  const [employee, setEmployee] = useState<any | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loadingAuth, setLoadingAuth] = useState<boolean>(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedEmployee = localStorage.getItem('currentEmployee');
-
-    if (storedEmployee) {
-      try {
-        // Parse para ListarFuncionarioDto
-        const parsedEmployee: ListarFuncionarioDto = JSON.parse(storedEmployee);
-        setEmployee(parsedEmployee);
-        setIsAuthenticated(true);
-      } catch (e) {
-        console.error("Erro ao parsear dados do funcionário do localStorage", e);
-        logout();
-      }
+    const storedToken = localStorage.getItem('token');
+    const storedEmail = localStorage.getItem('email');
+    if (storedToken && storedEmail) {
+      setEmployee({ email: storedEmail });
+      setIsAuthenticated(true);
     }
     setLoadingAuth(false);
   }, []);
 
-  const login = async (cpf: string): Promise<boolean> => {
+  const login = async (email: string, senha: string): Promise<boolean> => {
     setLoadingAuth(true);
     try {
-      // EmployeeService.getEmployeeByCpf já retorna ListarFuncionarioDto
-      const fetchedEmployee: ListarFuncionarioDto = await EmployeeService.getEmployeeByCpf(cpf);
-
-      setEmployee(fetchedEmployee);
-      setIsAuthenticated(true);
-      localStorage.setItem('currentEmployee', JSON.stringify(fetchedEmployee));
-
-      setLoadingAuth(false);
-      return true;
-    } catch (error) {
-      console.error("Erro no 'login' por CPF:", error);
+      const data = await AuthService.login(email, senha);
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('email', email);
+        setEmployee({ email });
+        setIsAuthenticated(true);
+        setLoadingAuth(false);
+        return true;
+      } else {
+        throw new Error('Token não recebido.');
+      }
+    } catch (error: any) {
       setEmployee(null);
       setIsAuthenticated(false);
-      localStorage.removeItem('currentEmployee');
+      localStorage.removeItem('token');
+      localStorage.removeItem('email');
       setLoadingAuth(false);
       return false;
     }
@@ -68,7 +61,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     setEmployee(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('currentEmployee');
+    localStorage.removeItem('token');
+    localStorage.removeItem('email');
     navigate('/login');
   };
 
