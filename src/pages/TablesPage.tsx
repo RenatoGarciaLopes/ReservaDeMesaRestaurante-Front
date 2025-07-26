@@ -5,7 +5,7 @@ import TableCard from '../shared/components/TableCard.tsx';
 import type { Table, TableStatusType, TableFilterStatus, SortOption } from '../shared/types/Table';
 import AddIcon from '@mui/icons-material/Add';
 import TableService from '../shared/services/TableService';
-import SettingsModal from '../shared/components/SettingsModal.tsx';
+import SettingsModal from '../shared/components/SettingsModal';
 
 
 

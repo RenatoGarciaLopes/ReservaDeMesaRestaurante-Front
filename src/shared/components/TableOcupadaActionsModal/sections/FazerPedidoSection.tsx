@@ -86,7 +86,9 @@ export function FazerPedidoSection({ table, employee, onTableUpdate }: FazerPedi
                 for (const categoria of categories) {
                     try {
                         const response = await MenuItemService.listarItens(0, 50, categoria.id);
-                        allItems.push(...response.content);
+                        // Filtrar apenas itens ativos
+                        const itensAtivos = response.content.filter(item => item.ativo);
+                        allItems.push(...itensAtivos);
                     } catch (error) {
                         // Ignora erros individuais de categoria
                     }
@@ -96,7 +98,9 @@ export function FazerPedidoSection({ table, employee, onTableUpdate }: FazerPedi
             } else {
                 // Buscar itens de uma categoria específica
                 const response = await MenuItemService.listarItens(0, 50, categoriaId);
-                setMenuItems(response.content);
+                // Filtrar apenas itens ativos
+                const itensAtivos = response.content.filter(item => item.ativo);
+                setMenuItems(itensAtivos);
             }
         } catch (error: any) {
             setErrorMessage('Erro ao carregar itens: ' + error.message);
