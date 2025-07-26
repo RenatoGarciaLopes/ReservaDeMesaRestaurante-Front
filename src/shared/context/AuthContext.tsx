@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-// Importe ListarFuncionarioDto diretamente
-
+import type { ListarFuncionarioDto } from '../types/Employee';
 import AuthService from '../services/AuthService';
+import EmployeeService from '../services/EmployeeService';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
-  employee: any | null; // Pode ser null ou apenas email
+  employee: ListarFuncionarioDto | null;
   isAuthenticated: boolean;
   login: (email: string, senha: string) => Promise<boolean>;
   logout: () => void;
   loadingAuth: boolean;
+  refreshEmployeeData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,17 +20,36 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [employee, setEmployee] = useState<any | null>(null);
+  const [employee, setEmployee] = useState<ListarFuncionarioDto | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loadingAuth, setLoadingAuth] = useState<boolean>(true);
   const navigate = useNavigate();
 
+  const fetchEmployeeData = async (id: number) => {
+    try {
+      const employeeData = await EmployeeService.getEmployeeById(id);
+      setEmployee(employeeData);
+    } catch (error) {
+      console.error('Erro ao buscar dados do funcionário:', error);
+      // Se não conseguir buscar os dados, mantém apenas o ID
+      setEmployee({ id } as ListarFuncionarioDto);
+    }
+  };
+
+  const refreshEmployeeData = async () => {
+    const storedId = localStorage.getItem('employeeId');
+    if (storedId) {
+      await fetchEmployeeData(parseInt(storedId));
+    }
+  };
+
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    const storedEmail = localStorage.getItem('email');
-    if (storedToken && storedEmail) {
-      setEmployee({ email: storedEmail });
+    const storedId = localStorage.getItem('employeeId');
+    
+    if (storedToken && storedId) {
       setIsAuthenticated(true);
+      fetchEmployeeData(parseInt(storedId));
     }
     setLoadingAuth(false);
   }, []);
@@ -38,21 +58,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setLoadingAuth(true);
     try {
       const data = await AuthService.login(email, senha);
-      if (data.token) {
+      if (data.token && data.id) {
         localStorage.setItem('token', data.token);
-        localStorage.setItem('email', email);
-        setEmployee({ email });
+        localStorage.setItem('employeeId', data.id.toString());
+        
+        // Buscar dados completos do funcionário
+        await fetchEmployeeData(data.id);
+        
         setIsAuthenticated(true);
         setLoadingAuth(false);
         return true;
       } else {
-        throw new Error('Token não recebido.');
+        throw new Error('Token ou ID não recebido.');
       }
     } catch (error: any) {
       setEmployee(null);
       setIsAuthenticated(false);
       localStorage.removeItem('token');
-      localStorage.removeItem('email');
+      localStorage.removeItem('employeeId');
       setLoadingAuth(false);
       return false;
     }
@@ -62,12 +85,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setEmployee(null);
     setIsAuthenticated(false);
     localStorage.removeItem('token');
-    localStorage.removeItem('email');
+    localStorage.removeItem('employeeId');
     navigate('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ employee, isAuthenticated, login, logout, loadingAuth }}>
+    <AuthContext.Provider value={{ employee, isAuthenticated, login, logout, loadingAuth, refreshEmployeeData }}>
       {children}
     </AuthContext.Provider>
   );

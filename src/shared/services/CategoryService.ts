@@ -1,11 +1,5 @@
 import axios from 'axios';
-
-interface ListarCategoriaDto {
-  id: number;
-  nome: string;
-  descricao?: string;
-  ativo: boolean;
-}
+import type { ListarCategoriaDto, CadastrarCategoriaDto } from '../types/Category';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -39,6 +33,16 @@ class CategoryService {
     
     if (response.data.error) {
       throw new Error(response.data.error.message || "Erro ao obter categoria.");
+    }
+
+    return response.data.data;
+  }
+
+  async cadastrarCategoria(dto: CadastrarCategoriaDto): Promise<ListarCategoriaDto> {
+    const response = await axios.post<ApiResponse<ListarCategoriaDto>>(API_URL, dto);
+    
+    if (response.data.error) {
+      throw new Error(response.data.error.message || "Erro ao cadastrar categoria.");
     }
 
     return response.data.data;
