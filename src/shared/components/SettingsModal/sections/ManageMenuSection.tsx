@@ -13,7 +13,6 @@ import {
     Card,
     CardMedia,
     CardContent,
-    CardActions,
     Chip,
     Button,
     Dialog,
@@ -23,6 +22,8 @@ import {
     Menu,
     ListItemIcon,
     ListItemText,
+    Slide,
+    Fade,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
@@ -30,6 +31,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import CloseIcon from '@mui/icons-material/Close';
 import CategoryService from '../../../services/CategoryService';
 import MenuItemService from '../../../services/MenuItemService';
 import type { ListarCategoriaDto } from '../../../types/Category';
@@ -50,8 +52,8 @@ export function ManageMenuSection() {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedItem, setSelectedItem] = useState<ListarItensDto | null>(null);
 
-    // Estados para cadastro de novos itens
-    const [cadastroModalOpen, setCadastroModalOpen] = useState(false);
+    // Estados para cadastro de novos itens (slide lateral)
+    const [showCadastroForm, setShowCadastroForm] = useState(false);
     const [itemData, setItemData] = useState<MenuItemFormData>({
         nome: '',
         descricao: '',
@@ -134,9 +136,9 @@ export function ManageMenuSection() {
         handleMenuClose();
     };
 
-    // Função para abrir modal de cadastro
+    // Função para abrir formulário de cadastro (slide lateral)
     const handleAbrirCadastro = () => {
-        setCadastroModalOpen(true);
+        setShowCadastroForm(true);
         setItemData({
             nome: '',
             descricao: '',
@@ -148,9 +150,9 @@ export function ManageMenuSection() {
         setCadastroError(null);
     };
 
-    // Função para fechar modal de cadastro
+    // Função para fechar formulário de cadastro
     const handleFecharCadastro = () => {
-        setCadastroModalOpen(false);
+        setShowCadastroForm(false);
         setItemData({
             nome: '',
             descricao: '',
@@ -316,185 +318,189 @@ export function ManageMenuSection() {
     };
 
     return (
-        <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6">Gerenciar Itens do Cardápio</Typography>
-            </Box>
-            
-            {/* Filtros */}
-            <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                    <FormControl size="small" sx={{ width: 250 }}>
-                        <InputLabel id="categoria-label">Categoria</InputLabel>
-                        <Select 
-                            labelId="categoria-label"
-                            value={filtroCategoria} 
-                            onChange={e => setFiltroCategoria(e.target.value as number | '')}
-                            label="Categoria"
-                        >
-                            <MenuItem value="">Todas</MenuItem>
-                            {categorias.map(cat => (
-                                <MenuItem key={cat.id} value={cat.id}>{cat.nome}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" sx={{ width: 180 }}>
-                        <InputLabel id="status-label">Status</InputLabel>
-                        <Select 
-                            labelId="status-label"
-                            value={filtroStatus} 
-                            onChange={e => setFiltroStatus(e.target.value)}
-                            label="Status"
-                        >
-                            <MenuItem value="">Todos</MenuItem>
-                            <MenuItem value="ativo">Ativos</MenuItem>
-                            <MenuItem value="inativo">Inativos</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={handleAbrirCadastro}
-                        sx={{
-                            backgroundColor: 'primary.dark', 
-                            color: 'primary.contrastText',
-                            px: 2,
-                            py: 1,
-                            whiteSpace: 'nowrap',
-                            '&:hover': {
-                                backgroundColor: 'primary.light'
-                            }
-                        }}
-                    >
-                        Novo Item
-                    </Button>
-                </Box>
-                <TextField
-                    size="small"
-                    placeholder="Buscar por nome"
-                    value={busca}
-                    onChange={e => setBusca(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon />
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{ 
-                        width: '100%',
-                        '& .MuiOutlinedInput-root': {
-                            height: 40
-                        }
-                    }}
-                />
-            </Box>
-            {actionMessage && <Alert severity="success" sx={{ mb: 2 }}>{actionMessage}</Alert>}
-            {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
+        <Box sx={{ position: 'relative', overflow: 'hidden', height: '100%' }}>
+            {/* Conteúdo principal */}
             <Box
                 sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
-                    gap: 3,
-                    mb: 3
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    transform: showCadastroForm ? 'translateX(-100%)' : 'translateX(0)',
+                    transition: 'transform 0.3s ease-in-out',
+                    backgroundColor: 'background.paper',
+                    overflow: 'auto',
+                    p: 3,
                 }}
             >
-                {loading ? (
-                    <Box sx={{ gridColumn: '1/-1', textAlign: 'center' }}><CircularProgress /></Box>
-                ) : itensFiltrados.length === 0 ? (
-                    <Box sx={{ gridColumn: '1/-1', textAlign: 'center' }}><Typography align="center">Nenhum item encontrado.</Typography></Box>
-                ) : itensFiltrados.map(item => (
-                    <Card key={item.id} sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: 3 }}>
-                        <Box sx={{ position: 'relative' }}>
-                            <CardMedia
-                                component="img"
-                                height="180"
-                                image={item.imagemUrl || '/placeholder-food.jpg'}
-                                alt={item.nome}
-                                sx={{ objectFit: 'cover', borderRadius: 2, borderBottom: '1px solid #eee' }}
-                            />
-                            <Chip
-                                label={item.categoria}
-                                size="small"
-                                sx={{ position: 'absolute', top: 8, left: 8, bgcolor: 'primary.main', color: 'white', fontWeight: 600 }}
-                            />
-                            {item.ativo === true ? (
-                                <Chip
-                                    label="Ativo"
-                                    size="small"
-                                    color="success"
-                                    sx={{ position: 'absolute', top: 8, right: 8, fontWeight: 600 }}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Box>
+                        <Typography variant="h6">Gerenciar Itens do Cardápio</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                            Adicione, edite ou remova itens do cardápio do restaurante.
+                        </Typography>
+                    </Box>
+                </Box>
+                
+                {/* Filtros */}
+                <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                        <FormControl size="small" sx={{ width: 250 }}>
+                            <InputLabel id="categoria-label">Categoria</InputLabel>
+                            <Select 
+                                labelId="categoria-label"
+                                value={filtroCategoria} 
+                                onChange={e => setFiltroCategoria(e.target.value as number | '')}
+                                label="Categoria"
+                            >
+                                <MenuItem value="">Todas</MenuItem>
+                                {categorias.map(cat => (
+                                    <MenuItem key={cat.id} value={cat.id}>{cat.nome}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <FormControl size="small" sx={{ width: 180 }}>
+                            <InputLabel id="status-label">Status</InputLabel>
+                            <Select 
+                                labelId="status-label"
+                                value={filtroStatus} 
+                                onChange={e => setFiltroStatus(e.target.value)}
+                                label="Status"
+                            >
+                                <MenuItem value="">Todos</MenuItem>
+                                <MenuItem value="ativo">Ativos</MenuItem>
+                                <MenuItem value="inativo">Inativos</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={handleAbrirCadastro}
+                            sx={{
+                                backgroundColor: 'primary.dark', 
+                                color: 'primary.contrastText',
+                                px: 2,
+                                py: 1,
+                                whiteSpace: 'nowrap',
+                                '&:hover': {
+                                    backgroundColor: 'primary.light'
+                                }
+                            }}
+                        >
+                            Novo Item
+                        </Button>
+                    </Box>
+                    <TextField
+                        size="small"
+                        placeholder="Buscar por nome"
+                        value={busca}
+                        onChange={e => setBusca(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ 
+                            width: '100%',
+                            '& .MuiOutlinedInput-root': {
+                                height: 40
+                            }
+                        }}
+                    />
+                </Box>
+                {actionMessage && <Alert severity="success" sx={{ mb: 2 }}>{actionMessage}</Alert>}
+                {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                        gap: 3,
+                        mb: 3
+                    }}
+                >
+                    {loading ? (
+                        <Box sx={{ gridColumn: '1/-1', textAlign: 'center' }}><CircularProgress /></Box>
+                    ) : itensFiltrados.length === 0 ? (
+                        <Box sx={{ gridColumn: '1/-1', textAlign: 'center' }}><Typography align="center">Nenhum item encontrado.</Typography></Box>
+                    ) : itensFiltrados.map(item => (
+                        <Card key={item.id} sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: 3 }}>
+                            <Box sx={{ position: 'relative' }}>
+                                <CardMedia
+                                    component="img"
+                                    height="180"
+                                    image={item.imagemUrl || '/placeholder-food.jpg'}
+                                    alt={item.nome}
+                                    sx={{ objectFit: 'cover', borderRadius: 2, borderBottom: '1px solid #eee' }}
                                 />
-                            ) : (
                                 <Chip
-                                    label="Inativo"
+                                    label={item.categoria}
                                     size="small"
-                                    color="error"
-                                    sx={{ position: 'absolute', top: 8, right: 8, fontWeight: 600 }}
+                                    sx={{ position: 'absolute', top: 8, left: 8, bgcolor: 'primary.main', color: 'white', fontWeight: 600 }}
                                 />
-                            )}
-                        </Box>
-                        <CardContent sx={{ flexGrow: 1 }}>
-                            <Typography variant="h6" fontWeight={700} gutterBottom noWrap>{item.nome}</Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, minHeight: 32 }} noWrap>{item.descricao}</Typography>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="h5" color="primary" fontWeight={700}>
-                                    R$ {item.preco.toFixed(2)}
-                                </Typography>
-                                <IconButton
-                                    size="small"
-                                    onClick={(e) => handleMenuOpen(e, item)}
-                                    sx={{ color: 'text.secondary' }}
-                                >
-                                    <MoreVertIcon />
-                                </IconButton>
+                                {item.ativo === true ? (
+                                    <Chip
+                                        label="Ativo"
+                                        size="small"
+                                        color="success"
+                                        sx={{ position: 'absolute', top: 8, right: 8, fontWeight: 600 }}
+                                    />
+                                ) : (
+                                    <Chip
+                                        label="Inativo"
+                                        size="small"
+                                        color="error"
+                                        sx={{ position: 'absolute', top: 8, right: 8, fontWeight: 600 }}
+                                    />
+                                )}
                             </Box>
-                        </CardContent>
-                    </Card>
-                ))}
+                            <CardContent sx={{ flexGrow: 1 }}>
+                                <Typography variant="h6" fontWeight={700} gutterBottom noWrap>{item.nome}</Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, minHeight: 32 }} noWrap>{item.descricao}</Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color="primary" fontWeight={700}>
+                                        R$ {item.preco.toFixed(2)}
+                                    </Typography>
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) => handleMenuOpen(e, item)}
+                                        sx={{ color: 'text.secondary' }}
+                                    >
+                                        <MoreVertIcon />
+                                    </IconButton>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Box>
             </Box>
 
-            {/* Menu de ações */}
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
+            {/* Formulário de cadastro (slide lateral) */}
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    transform: showCadastroForm ? 'translateX(0)' : 'translateX(100%)',
+                    transition: 'transform 0.3s ease-in-out',
+                    backgroundColor: 'background.paper',
+                    zIndex: 1000,
+                    overflow: 'auto',
+                    p: 3,
                 }}
             >
-                <MenuItem onClick={handleEditarClick}>
-                    <ListItemIcon>
-                        <EditIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>Editar</ListItemText>
-                </MenuItem>
-                {selectedItem?.ativo === true ? (
-                    <MenuItem onClick={handleInativarClick}>
-                        <ListItemIcon>
-                            <DeleteIcon fontSize="small" color="error" />
-                        </ListItemIcon>
-                        <ListItemText sx={{ color: 'error.main' }}>Inativar</ListItemText>
-                    </MenuItem>
-                ) : (
-                    <MenuItem onClick={handleReativarClick}>
-                        <ListItemIcon>
-                            <RestoreIcon fontSize="small" color="success" />
-                        </ListItemIcon>
-                        <ListItemText sx={{ color: 'success.main' }}>Reativar</ListItemText>
-                    </MenuItem>
-                )}
-            </Menu>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h6">Cadastrar Novo Item</Typography>
+                    <IconButton onClick={handleFecharCadastro} size="large">
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
 
-            {/* Modal de Cadastro */}
-            <Dialog open={cadastroModalOpen} onClose={handleFecharCadastro} maxWidth="sm" fullWidth>
-                <DialogTitle>Cadastrar Novo Item</DialogTitle>
-                <DialogContent>
+                <Box sx={{ maxWidth: 600, mx: 'auto' }}>
                     <TextField
                         margin="dense"
                         label="Nome do Item"
@@ -556,18 +562,31 @@ export function ManageMenuSection() {
                                 variant="outlined"
                                 component="span"
                                 fullWidth
-                                sx={{ mb: 1 }}
+                                sx={{ mb: 1, py: 1.5 }}
                             >
                                 {itemData.imagem ? `Imagem selecionada: ${itemData.imagem.name}` : 'Selecionar Imagem'}
                             </Button>
                         </label>
+                        {itemData.imagem && (
+                            <Box sx={{ textAlign: 'center', mt: 1 }}>
+                                <img
+                                    src={URL.createObjectURL(itemData.imagem)}
+                                    alt="Preview"
+                                    style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8 }}
+                                />
+                            </Box>
+                        )}
                     </Box>
 
                     {cadastroSuccess && <Alert severity="success" sx={{ mb: 2 }}>{cadastroSuccess}</Alert>}
                     {cadastroError && <Alert severity="error" sx={{ mb: 2 }}>{cadastroError}</Alert>}
 
                     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                        <Button onClick={handleFecharCadastro}>
+                        <Button 
+                            onClick={handleFecharCadastro}
+                            variant="outlined"
+                            sx={{ px: 3, py: 1 }}
+                        >
                             Cancelar
                         </Button>
                         <Button
@@ -575,17 +594,57 @@ export function ManageMenuSection() {
                             onClick={handleCadastrarItem}
                             disabled={cadastroLoading}
                             sx={{
-                                backgroundColor: 'primary.dark', color: 'primary.contrastText',
+                                backgroundColor: 'primary.dark', 
+                                color: 'primary.contrastText',
+                                px: 3,
+                                py: 1,
                                 '&:hover': {
                                     backgroundColor: 'primary.light'
                                 }
                             }}
                         >
-                            {cadastroLoading ? <CircularProgress size={24} /> : 'Cadastrar Item'}
+                            {cadastroLoading ? <CircularProgress size={20} /> : 'Cadastrar Item'}
                         </Button>
                     </Box>
-                </DialogContent>
-            </Dialog>
+                </Box>
+            </Box>
+
+            {/* Menu de ações */}
+            <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                }}
+            >
+                <MenuItem onClick={handleEditarClick}>
+                    <ListItemIcon>
+                        <EditIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Editar</ListItemText>
+                </MenuItem>
+                {selectedItem?.ativo === true ? (
+                    <MenuItem onClick={handleInativarClick}>
+                        <ListItemIcon>
+                            <DeleteIcon fontSize="small" color="error" />
+                        </ListItemIcon>
+                        <ListItemText sx={{ color: 'error.main' }}>Inativar</ListItemText>
+                    </MenuItem>
+                ) : (
+                    <MenuItem onClick={handleReativarClick}>
+                        <ListItemIcon>
+                            <RestoreIcon fontSize="small" color="success" />
+                        </ListItemIcon>
+                        <ListItemText sx={{ color: 'success.main' }}>Reativar</ListItemText>
+                    </MenuItem>
+                )}
+            </Menu>
 
             {/* Modal de Edição */}
             <Dialog open={editarModalOpen} onClose={() => setEditarModalOpen(false)} maxWidth="sm" fullWidth>

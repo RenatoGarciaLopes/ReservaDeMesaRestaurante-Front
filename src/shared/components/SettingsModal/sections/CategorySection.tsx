@@ -67,7 +67,10 @@ export function CategorySection() {
 
     return (
         <Box>
-            <Typography variant="h6" gutterBottom>Cadastrar Nova Categoria</Typography>
+            <Typography variant="h6" gutterBottom>Categorias</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Gerencie as categorias do cardápio para organizar os itens do menu.
+            </Typography>
             <TextField
                 margin="dense"
                 label="Nome da Categoria"

@@ -21,6 +21,25 @@ interface TrocarSenhaDto {
   confirmarNovaSenha: string;
 }
 
+// DTO para criar funcionário
+interface CriarFuncionarioDto {
+  nome: string;
+  email: string;
+  telefone: string;
+  cargo: Cargo;
+  cpf: string;
+  senha: string;
+}
+
+// Interface para resposta paginada
+interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
 const EmployeeService = {
   /**
    * Busca um funcionário pelo ID.
@@ -50,9 +69,7 @@ const EmployeeService = {
   getEmployeeByCpf: async (cpf: string): Promise<ListarFuncionarioDto> => {
     try {
       const cleanCpf = cpf.replace(/\D/g, '');
-      const response = await axios.get(`${API_BASE_URL}/buscar`, {
-        params: { cpf: cleanCpf },
-      });
+      const response = await axios.get(`${API_BASE_URL}/cpf/${cleanCpf}`);
       return response.data.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -60,6 +77,108 @@ const EmployeeService = {
           throw new Error("Funcionário não encontrado com o CPF informado ou inativo.");
         }
         throw new Error(error.response.data.message || "Erro ao buscar funcionário por CPF.");
+      }
+      throw new Error("Erro de rede ou ao conectar com o servidor.");
+    }
+  },
+
+  /**
+   * Busca funcionários paginados com filtros.
+   * @param pagina Número da página (0-based)
+   * @param tamanho Tamanho da página
+   * @param ativo Filtro por status ativo/inativo
+   * @param cargo Filtro por cargo
+   * @returns Lista paginada de funcionários
+   */
+  getEmployeesPaginated: async (
+    pagina: number = 0,
+    tamanho: number = 10,
+    ativo?: boolean,
+    cargo?: Cargo
+  ): Promise<PaginatedResponse<ListarFuncionarioDto>> => {
+    try {
+      const params = new URLSearchParams({
+        pagina: pagina.toString(),
+        tamanho: tamanho.toString(),
+      });
+
+      if (ativo !== undefined) {
+        params.append('ativo', ativo.toString());
+      }
+
+      if (cargo) {
+        params.append('cargo', cargo);
+      }
+
+      const url = `${API_BASE_URL}?${params.toString()}`;
+      const response = await axios.get(url);
+      
+      // Verificar se a resposta tem a estrutura esperada
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Resposta da API inválida');
+      }
+      
+      // Processar a estrutura da resposta
+      let result = response.data;
+      
+      // Se a resposta tem uma propriedade 'data' com 'content' aninhado
+      if (response.data.data && response.data.data.content && Array.isArray(response.data.data.content)) {
+        result = {
+          content: response.data.data.content,
+          totalElements: response.data.data.totalElements || 0,
+          totalPages: response.data.data.totalPages || 0,
+          size: response.data.data.size || 10,
+          number: response.data.data.number || 0,
+        };
+      }
+      // Se a resposta tem uma propriedade 'data' que é um array
+      else if (response.data.data && Array.isArray(response.data.data)) {
+        result = {
+          content: response.data.data,
+          totalElements: response.data.totalElements || 0,
+          totalPages: response.data.totalPages || 0,
+          size: response.data.size || 10,
+          number: response.data.number || 0,
+        };
+      }
+      // Se a resposta tem uma propriedade 'content' diretamente
+      else if (response.data.content && Array.isArray(response.data.content)) {
+        result = response.data;
+      }
+      
+      // Garantir que content seja sempre um array
+      if (!result.content || !Array.isArray(result.content)) {
+        result.content = [];
+      }
+      
+      return result;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || "Erro ao buscar funcionários.");
+      }
+      throw new Error("Erro de rede ou ao conectar com o servidor.");
+    }
+  },
+
+  /**
+   * Cria um novo funcionário.
+   * @param data Dados do funcionário a ser criado
+   * @returns O funcionário criado
+   */
+  createEmployee: async (data: CriarFuncionarioDto): Promise<ListarFuncionarioDto> => {
+    try {
+      const telefoneLimpo = data.telefone.replace(/[^\d()]/g, '');
+      const cpfLimpo = data.cpf.replace(/\D/g, '');
+
+      const response = await axios.post(`${API_BASE_URL}`, {
+        ...data,
+        telefone: telefoneLimpo,
+        cpf: cpfLimpo,
+      });
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || "Erro ao criar funcionário.");
       }
       throw new Error("Erro de rede ou ao conectar com o servidor.");
     }
@@ -101,6 +220,41 @@ const EmployeeService = {
         throw new Error(errorMessage);
       }
       throw new Error("Erro de rede ou ao conectar com o servidor ao alterar senha.");
+    }
+  },
+
+  /**
+   * Ativa ou desativa um funcionário.
+   * @param id ID do funcionário
+   * @param ativo Status desejado
+   * @returns Mensagem de sucesso
+   */
+  toggleEmployeeStatus: async (id: number, ativo: boolean): Promise<string> => {
+    try {
+      const response = await axios.patch(`${API_BASE_URL}/${id}`, { ativo });
+      return response.data.message || "Status do funcionário atualizado com sucesso!";
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || "Erro ao atualizar status do funcionário.");
+      }
+      throw new Error("Erro de rede ou ao conectar com o servidor.");
+    }
+  },
+
+  /**
+   * Exclui um funcionário.
+   * @param id ID do funcionário a ser excluído
+   * @returns Mensagem de sucesso
+   */
+  deleteEmployee: async (id: number): Promise<string> => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/${id}`);
+      return response.data.message || "Funcionário excluído com sucesso!";
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || "Erro ao excluir funcionário.");
+      }
+      throw new Error("Erro de rede ou ao conectar com o servidor.");
     }
   },
 };

@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { SectionType } from './types';
 import { SidebarMenu } from './SidebarMenu';
 import { ProfileSection } from './sections/ProfileSection';
+import { SecuritySection } from './sections/SecuritySection';
 import { CategorySection } from './sections/CategorySection';
 import { ManageMenuSection } from './sections/ManageMenuSection';
 
@@ -39,7 +40,9 @@ function SettingsModal({ open, onClose }: SettingsModalProps) {
     const renderSection = () => {
         switch (currentSection) {
             case 'profile':
-                return <ProfileSection onLogout={handleLogout} />;
+                return <ProfileSection />;
+            case 'security':
+                return <SecuritySection />;
             case 'category':
                 return <CategorySection />;
             case 'manageMenu':

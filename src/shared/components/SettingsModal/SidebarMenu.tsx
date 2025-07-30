@@ -10,6 +10,7 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import CategoryIcon from '@mui/icons-material/Category';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import SecurityIcon from '@mui/icons-material/Security';
 
 import type { SectionType } from './types';
 
@@ -24,6 +25,11 @@ export function SidebarMenu({ currentSection, onSectionChange }: SidebarMenuProp
             id: 'profile' as SectionType,
             label: 'Perfil',
             icon: <PersonIcon />,
+        },
+        {
+            id: 'security' as SectionType,
+            label: 'Segurança',
+            icon: <SecurityIcon />,
         },
         {
             id: 'category' as SectionType,

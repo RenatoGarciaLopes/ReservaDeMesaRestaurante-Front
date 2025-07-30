@@ -1,4 +1,4 @@
-export type SectionType = 'profile' | 'category' | 'manageMenu';
+export type SectionType = 'profile' | 'category' | 'manageMenu' | 'security';
 
 export interface ModalState {
     loading: boolean;

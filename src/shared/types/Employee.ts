@@ -12,4 +12,6 @@ export interface ListarFuncionarioDto {
   cargo: Cargo;
   salario: number;
   dataContratacao: string; // Ou Date, se você for fazer o parse no front
+  ativo?: boolean; // Opcional pois pode não estar na resposta
+  dataCadastro?: string; // Opcional pois pode não estar na resposta
 }
